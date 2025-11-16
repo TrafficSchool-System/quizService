@@ -1,7 +1,7 @@
 package com.example.quizService.Controller;
 
+import com.example.quizService.Dto.QuizQuestionDTO;
 import com.example.quizService.Entity.Question;
-import com.example.quizService.Service.QuestionService;
 import com.example.quizService.Service.QuestionServiceInterface;
 import com.example.quizService.Service.excel.ExcelImportServiceInterface;
 
@@ -35,6 +35,15 @@ public class QuestionController {
     @GetMapping("/{id}")
     public Question getQuestionById(@PathVariable Long id) {
         return questionService.getQuestionById(id);
+    }
+
+    // === HÄMTA FRÅGOR FRÅN SUBJECT MED LIMIT ===
+    @GetMapping("/subject/{subject}")
+    public ResponseEntity<List<QuizQuestionDTO>> getQuestionsBySubject(
+        @PathVariable int subject, 
+        @RequestParam(value = "limit", required = false, defaultValue = "10") int limit){
+            List<QuizQuestionDTO> dtos = questionService.getQuestionsBySubject(subject, limit); 
+            return ResponseEntity.ok(dtos);  
     }
 
 
