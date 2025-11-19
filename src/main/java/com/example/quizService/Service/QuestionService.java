@@ -44,10 +44,13 @@ public class QuestionService implements QuestionServiceInterface {
         // Slumpa ordningen på frågorna
         Collections.shuffle(all);
 
-        // Begränsa antal frågor eller hämta alla med stream 
-        List<Question> selected = (limit < 10)
-            ? all.stream().limit(limit).collect(Collectors.toList())
-            : all; 
+        // Om användaren begär mer frågor än det som finns -> ge alla
+        int actualLimit = Math.min(limit, all.size()); 
+
+        // Plocka ut exakt så många som ska användas
+        List<Question> selected = all.stream()
+            .limit(actualLimit)
+            .collect(Collectors.toList()); 
         
         // Bygg DTO objekten
         List<QuizQuestionDTO> result = new ArrayList<>();
