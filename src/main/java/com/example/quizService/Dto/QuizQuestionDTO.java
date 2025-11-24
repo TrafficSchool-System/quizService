@@ -6,6 +6,7 @@ public class QuizQuestionDTO {
 
     private Long id; 
     private String question; 
+    private String sfi; 
     private List<String> answers; 
     private int correctAnswerIndex; 
     private String image; 
@@ -13,10 +14,13 @@ public class QuizQuestionDTO {
 
     public QuizQuestionDTO(){}
 
-    public QuizQuestionDTO(Long id, String question, List<String> answers, int correctAnswerIndex, String image,
-            String explinationForStudent) {
+    
+
+    public QuizQuestionDTO(Long id, String question, String sfi, List<String> answers, int correctAnswerIndex,
+            String image, String explinationForStudent) {
         this.id = id;
         this.question = question;
+        this.sfi = sfi;
         this.answers = answers;
         this.correctAnswerIndex = correctAnswerIndex;
         this.image = image;
@@ -37,6 +41,14 @@ public class QuizQuestionDTO {
 
     public void setQuestion(String question) {
         this.question = question;
+    }
+
+    public String getSfi() {
+        return sfi;
+    }
+
+    public void setSfi(String sfi) {
+        this.sfi = sfi;
     }
 
     public List<String> getAnswers() {
@@ -70,7 +82,5 @@ public class QuizQuestionDTO {
     public void setExplinationForStudent(String explinationForStudent) {
         this.explinationForStudent = explinationForStudent;
     }
-
-    
 
 }
