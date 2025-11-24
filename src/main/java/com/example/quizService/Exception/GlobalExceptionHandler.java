@@ -18,8 +18,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Rad-fel: " + ex.getMessage());
     }
 
+    @ExceptionHandler(SubjectQuestionCountException.class)
+    public ResponseEntity<String> handleSubjectCountException(SubjectQuestionCountException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Slutprov-fel: " + ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleOtherException(Exception ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Fel: " + ex.getMessage());
     }
 }
+

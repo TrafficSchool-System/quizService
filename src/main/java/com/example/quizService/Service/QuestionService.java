@@ -1,8 +1,12 @@
 package com.example.quizService.Service;
 
+import com.example.quizService.Dto.FinalExamDTO;
 import com.example.quizService.Dto.QuizQuestionDTO;
 import com.example.quizService.Entity.Question;
+import com.example.quizService.Exception.SubjectQuestionCountException;
 import com.example.quizService.Repository.QuestionRepository;
+import com.example.quizService.Util.QuizMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,65 +37,37 @@ public class QuestionService implements QuestionServiceInterface {
     }
     
     @Override
-    public List<QuizQuestionDTO> getQuestionsBySubject(int subject, int limit) {
+    public List<QuizQuestionDTO> getQuestionsBySubjects(List<Integer> subjects, int limit) {
 
-        // Hämta alla frågor från subject
-        List<Question> all = questionRepository.findBySubject(subject);
-        
-        // Kontrollera om listan är tom
-        if (all.isEmpty()) return Collections.emptyList();
-        
-        // Slumpa ordningen på frågorna
-        Collections.shuffle(all);
+        if (subjects == null || subjects.isEmpty()) return Collections.emptyList(); 
 
-        // Om användaren begär mer frågor än det som finns -> ge alla
-        int actualLimit = Math.min(limit, all.size()); 
+        int numSubjects = subjects.size();
+        int perSubject = limit / numSubjects; // lika många frågor per ämne
+        int remainder = limit % numSubjects;  // fördela udda frågor
 
-        // Plocka ut exakt så många som ska användas
-        List<Question> selected = all.stream()
-            .limit(actualLimit)
-            .collect(Collectors.toList()); 
-        
-        // Bygg DTO objekten
         List<QuizQuestionDTO> result = new ArrayList<>();
-        
-        // Loopar igenom varje fråga som valts ut från databasen 
-        for (Question q : selected){
 
-            // Skapa en ny lista som ska innehålla alla svarsalternativen.
-            List<String> answers = new ArrayList<>(); 
+        for (int i = 0; i < subjects.size(); i++) {
+        int subjectLimit = perSubject + (i < remainder ? 1 : 0); // fördela resterande frågor
 
-            // Lägg till det rätta svaret först
-            answers.add(q.getCorrectAnswer());
-            
-            // Lägg till de tre felaktiga svarsalternativen
-            answers.add(q.getWrongAnswer1()); 
-            answers.add(q.getWrongAnswer2()); 
-            answers.add(q.getWrongAnswer3());
-            
-            // Blanda ordning på svaren svaren
-            Collections.shuffle(answers);
+        List<Question> questionsForSubject = questionRepository.findBySubject(subjects.get(i));
+        if (questionsForSubject.isEmpty()) continue;
 
-            // Hitta vilket index som är rätt svar 
-            int correctIndex = answers.indexOf(q.getCorrectAnswer());
-            
-            // Skapa ett nytt DTO-objekt som ska skickas till frontend
-            // Innehåller frågans id, text, svarsalternativ, rätt svar-index, bild och förklaring
-            QuizQuestionDTO dto = new QuizQuestionDTO(
-                q.getId(), 
-                q.getQuestion(), 
-                answers, 
-                correctIndex, 
-                q.getImage(),
-                q.getExplanationForStudent()
-            );
+        Collections.shuffle(questionsForSubject);
+        List<Question> selected = questionsForSubject.stream()
+                .limit(Math.min(subjectLimit, questionsForSubject.size()))
+                .collect(Collectors.toList());
 
-            // Lägg till färdiga frågeobjektet i listan som ska retuneras
-            result.add(dto); 
+        // Bygg DTO via util-klassen
+        for (Question q : selected) {
+            result.add(QuizMapper.toDTO(q));
         }
-
-        return result; 
     }
+
+    Collections.shuffle(result); // blanda totalt
+    return result;
+}
+
 
     @Override
     public List<Question> getQuestionsByLang(String lang) {
@@ -108,6 +84,40 @@ public class QuestionService implements QuestionServiceInterface {
     public void deleteQuestion(Long id) {
         questionRepository.deleteById(id);
     }
+
+    @Override
+    public FinalExamDTO getFinalExam() {
+
+    int[] subjectIds = {1, 2, 3, 4, 5};
+    int[] subjectLimits = {1, 1, 1, 1, 1};
+
+    List<QuizQuestionDTO> result = new ArrayList<>();
+
+    for (int i = 0; i < subjectIds.length; i++) {
+
+        List<Question> questionsForSubject = questionRepository.findBySubject(subjectIds[i]);
+
+        if (questionsForSubject.size() < subjectLimits[i]) {
+            throw new SubjectQuestionCountException(
+                "Subject " + subjectIds[i] + " har bara " + questionsForSubject.size()
+                + " frågor men kräver minst " + subjectLimits[i]
+            );
+        }
+
+        Collections.shuffle(questionsForSubject);
+
+        questionsForSubject.stream()
+            .limit(subjectLimits[i])
+            .map(QuizMapper::toDTO)
+            .forEach(result::add);
+    }
+
+    Collections.shuffle(result);
+
+    // Använd din nya DTO-constructorn
+    return new FinalExamDTO(result, 50); // ← 50 min timer
+}
+
 
     
 }

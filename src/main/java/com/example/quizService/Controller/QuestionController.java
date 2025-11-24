@@ -1,5 +1,6 @@
 package com.example.quizService.Controller;
 
+import com.example.quizService.Dto.FinalExamDTO;
 import com.example.quizService.Dto.QuizQuestionDTO;
 import com.example.quizService.Entity.Question;
 import com.example.quizService.Service.QuestionServiceInterface;
@@ -37,12 +38,17 @@ public class QuestionController {
         return questionService.getQuestionById(id);
     }
 
+    @GetMapping("/final-exam")
+    public ResponseEntity<FinalExamDTO> getFinalExam() {
+        return ResponseEntity.ok(questionService.getFinalExam());
+    }
+
     // === HÄMTA FRÅGOR FRÅN SUBJECT MED LIMIT ===
-    @GetMapping("/subject/{subject}")
-    public ResponseEntity<List<QuizQuestionDTO>> getQuestionsBySubject(
-        @PathVariable int subject, 
+    @GetMapping("/subjects")
+    public ResponseEntity<List<QuizQuestionDTO>> getQuestionsBySubjects(
+        @RequestParam List<Integer> subjects, 
         @RequestParam(value = "limit", required = false, defaultValue = "10") int limit){
-            List<QuizQuestionDTO> dtos = questionService.getQuestionsBySubject(subject, limit); 
+            List<QuizQuestionDTO> dtos = questionService.getQuestionsBySubjects(subjects, limit); 
             return ResponseEntity.ok(dtos);  
     }
 
