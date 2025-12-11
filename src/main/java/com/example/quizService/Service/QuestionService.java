@@ -3,6 +3,7 @@ package com.example.quizService.Service;
 import com.example.quizService.Dto.FinalExamDTO;
 import com.example.quizService.Dto.QuizQuestionDTO;
 import com.example.quizService.Entity.Question;
+import com.example.quizService.Exception.QuestionNotFoundException;
 import com.example.quizService.Exception.SubjectQuestionCountException;
 import com.example.quizService.Repository.QuestionRepository;
 import com.example.quizService.Util.QuizMapper;
@@ -77,7 +78,7 @@ public class QuestionService implements QuestionServiceInterface {
     @Override
     public Question getQuestionById(Long id) {
         Optional<Question> question = questionRepository.findById(id);
-        return question.orElse(null);
+        return question.orElseThrow(() -> new QuestionNotFoundException("ID: " + id));
     }
 
     @Override
