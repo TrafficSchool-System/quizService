@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,7 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.quizService.Dto.ExcelFileDTO;
+import com.example.quizService.Entity.ExcelImportFile;
 import com.example.quizService.Entity.Question;
+import com.example.quizService.Repository.ExcelImportFileRepository;
 import com.example.quizService.Service.QuestionServiceInterface;
 import com.example.quizService.Service.excel.ExcelImportServiceInterface;
 
@@ -26,29 +30,49 @@ public class AdminQuizController {
 
     private final QuestionServiceInterface questionService;
 
-    public AdminQuizController(ExcelImportServiceInterface excelImportService, QuestionServiceInterface questionService) {
+    private final ExcelImportFileRepository excelImportFileRepository;
+
+    public AdminQuizController(ExcelImportServiceInterface excelImportService, QuestionServiceInterface questionService, ExcelImportFileRepository excelImportFileRepository) {
         this.excelImportService = excelImportService; 
-        this.questionService = questionService; 
+        this.questionService = questionService;
+        this.excelImportFileRepository = excelImportFileRepository;  
     }
 
     // === IMPORTERA EXCEL FILEN - ADMIN ONLY ===
     @PostMapping("/import")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> importQuestions(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun) {
-        try {
-            int importedCount = excelImportService.importQuestionsFromExcel(file, dryRun);
-            if (dryRun) {
-                return ResponseEntity.ok("Dryrun lyckades! Antal giltiga frågor: " + importedCount);
-            } else {
-                return ResponseEntity.ok("Import lyckades! Antal importerade frågor: " + importedCount);
-            }
 
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Fel vid import: " + "\n" + e.getMessage());
+        int importedCount = excelImportService.importQuestionsFromExcel(file, dryRun);
+
+        String message; 
+        if (dryRun) {
+            message = ("Dryrun lyckades! Antal giltiga frågor: " + importedCount);
+        } else {
+            message = ("Import lyckades! Antal importerade frågor: " + importedCount);
         }
+
+        return ResponseEntity.ok(message); 
     }
+
+    // === HÄMTA EXCEL FILEN - ADMIN ONLY ===
+    @GetMapping("/files")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ExcelFileDTO>> getAllExcelFiles() {
+        List<ExcelFileDTO> files = excelImportService.getAllExcelFiles(); 
+        return ResponseEntity.ok(files);  
+
+    }
+
+    // === TA BORT EXCEL FILEN - ADMIN ONLY ===
+    @DeleteMapping("/files/{fileId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteExcelFile (@PathVariable Long fileId) {
+        excelImportService.deleteExcelFile(fileId);
+        return ResponseEntity.ok().build();
+    } 
+
 
     // === HÄMTA EN FRÅGA PER ID - ADMIN ONLY ===
     @GetMapping("/{id}")
