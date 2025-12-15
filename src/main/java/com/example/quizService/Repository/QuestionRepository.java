@@ -17,7 +17,10 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
   List<Question> findByLang(String lang); 
 
   // Hämta alla frågor med viss excelId
-  List<Question> findByExcelId (Integer excelId); 
+  List<Question> findByExcelId (Integer excelId);
 
+  boolean existsByQuestionAndCorrectAnswerAndSubjectAndLang(
+        String question, String correctAnswer, int subject, String lang
+        );
   
 }

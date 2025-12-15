@@ -53,6 +53,14 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ExcelNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleExcelNotFoundException(ExcelNotFoundException ex) {
+        return new ResponseEntity<>(
+            buildError("Not Found", "Excel-filen hittades inte.", HttpStatus.NOT_FOUND.value()),
+            HttpStatus.NOT_FOUND
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleOtherException(Exception ex) {
         if (ex instanceof org.springframework.security.access.AccessDeniedException) {
