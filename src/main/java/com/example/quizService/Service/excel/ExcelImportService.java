@@ -4,6 +4,7 @@ import com.example.quizService.Dto.ExcelFileDTO;
 import com.example.quizService.Entity.ExcelImportFile;
 import com.example.quizService.Entity.Question;
 import com.example.quizService.Exception.ExcelNotFoundException;
+import com.example.quizService.Exception.HeaderValidationException;
 import com.example.quizService.Exception.RowValidationException;
 import com.example.quizService.Repository.ExcelImportFileRepository;
 import com.example.quizService.Repository.QuestionRepository;
@@ -18,7 +19,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import com.example.quizService.Util.ZipExtractorUtil;
+import java.io.IOException;
 
 @Service
 public class ExcelImportService implements ExcelImportServiceInterface {
@@ -37,69 +42,94 @@ public class ExcelImportService implements ExcelImportServiceInterface {
     @Transactional
     public int importQuestionsFromExcel(MultipartFile file, boolean dryRun) {
         if (file.isEmpty()) {
-        throw new ExcelNotFoundException("Ingen Excel-fil hittades att importera");
+            throw new ExcelNotFoundException("Ingen Excel-fil hittades att importera");
         }
 
-    List<Question> questionsFromExcel = new ArrayList<>();
-    List<String> allErrors = new ArrayList<>();
+        MultipartFile excelFile = file; // Börja med att anta att det är en Excel-fil
 
-    try (InputStream is = file.getInputStream()) {
-        Workbook workbook = WorkbookFactory.create(is);
-        Sheet sheet = workbook.getSheetAt(0);
-
-        ExcelValidationUtil.validateHeader(sheet.getRow(0));
-
-        for (int r = 1; r <= sheet.getLastRowNum(); r++) {
-            Row row = sheet.getRow(r);
-            if (row == null) continue;
-
-            List<String> rowErrors = ExcelValidationUtil.validateRow(row, r);
-            if (!rowErrors.isEmpty()) {
-                allErrors.addAll(rowErrors);
-                continue;
-            }
-
-            questionsFromExcel.add(mapRowToQuestion(row));
-        }
-
-        if (!allErrors.isEmpty()) {
-            throw new RowValidationException(String.join("\n", allErrors));
-        }
-
-        // Filtrera bort dubletter baserat på frågetext + korrekt svar + ämne + språk
-        List<Question> filteredQuestions = new ArrayList<>();
-        for (Question q : questionsFromExcel) {
-            boolean exists = questionRepository.existsByQuestionAndCorrectAnswerAndSubjectAndLang(
-                    q.getQuestion(),
-                    q.getCorrectAnswer(),
-                    q.getSubject(),
-                    q.getLang()
-            );
-            if (!exists) {
-                filteredQuestions.add(q);
+        // Kolla om det är en ZIP-fil baserat på filnamnet
+        String originalFileName = file.getOriginalFilename();
+        if (originalFileName != null && originalFileName.toLowerCase().endsWith(".zip")) {
+            try {
+                // Extrahera Excel-filen från ZIP:en
+                // Bilderna sparas automatiskt till static/images/questions/
+                excelFile = ZipExtractorUtil.extractAndProcess(file);
+                System.out.println("✅ ZIP-fil extraherad. Excel-fil: " + excelFile.getOriginalFilename());
+            } catch (IOException e) {
+                throw new RuntimeException("Kunde inte extrahera ZIP-filen: " + e.getMessage(), e);
             }
         }
 
-        if (!dryRun) {
-            ExcelImportFile excelFile = new ExcelImportFile();
-            excelFile.setFileName(file.getOriginalFilename());
-            excelFile.setUploadedAt(LocalDateTime.now());
-            excelFile.setDryRun(false);
-            excelImportFileRepository.save(excelFile);
+        List<Question> questionsFromExcel = new ArrayList<>();
+        List<String> allErrors = new ArrayList<>();
 
-            // Koppla frågor till filen
-            for (Question q : filteredQuestions) {
-                q.setExcelImportFile(excelFile);
+        try (InputStream is = excelFile.getInputStream()) {
+            Workbook workbook = WorkbookFactory.create(is);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Validera header
+            ExcelValidationUtil.validateHeader(sheet.getRow(0));
+
+            // Läs rader
+            for (int r = 1; r <= sheet.getLastRowNum(); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null)
+                    continue;
+
+                List<String> rowErrors = ExcelValidationUtil.validateRow(row, r);
+                if (!rowErrors.isEmpty()) {
+                    allErrors.addAll(rowErrors);
+                    continue;
+                }
+
+                questionsFromExcel.add(mapRowToQuestion(row));
             }
 
-            questionRepository.saveAll(filteredQuestions);
-        }
+            if (!allErrors.isEmpty()) {
+                throw new RowValidationException(allErrors);
+            }
 
-        // Returnerar antal frågor som inte är dubletter (dryrun) eller antal importerade frågor
-        return filteredQuestions.size();
+            // Filtrera bort dubletter: både mot DB och inom samma fil
+            List<Question> filteredQuestions = new ArrayList<>();
+            Set<String> seenQuestions = new HashSet<>();
 
-    } catch (Exception e) {
-        throw new RuntimeException("Fel vid import av Excel-fil: " + e.getMessage(), e);
+            for (Question q : questionsFromExcel) {
+                // Skapa en unik nyckel baserat på fråga, korrekt svar, ämne och språk
+                String key = (q.getQuestion().trim().toLowerCase() + "|"
+                        + q.getCorrectAnswer().trim().toLowerCase() + "|"
+                        + q.getSubject() + "|"
+                        + q.getLang().trim().toLowerCase());
+
+                boolean existsInDB = questionRepository.existsByQuestionAndCorrectAnswerAndSubjectAndLang(
+                        q.getQuestion(), q.getCorrectAnswer(), q.getSubject(), q.getLang());
+
+                if (!existsInDB && !seenQuestions.contains(key)) {
+                    filteredQuestions.add(q);
+                    seenQuestions.add(key);
+                }
+            }
+
+            if (!dryRun) {
+                ExcelImportFile excelFileEntity = new ExcelImportFile();
+                excelFileEntity.setFileName(excelFile.getOriginalFilename());
+                excelFileEntity.setUploadedAt(LocalDateTime.now());
+                excelFileEntity.setDryRun(false);
+                excelImportFileRepository.save(excelFileEntity);
+
+                // Koppla frågor till filen
+                for (Question q : filteredQuestions) {
+                    q.setExcelImportFile(excelFileEntity);
+                }
+
+                questionRepository.saveAll(filteredQuestions);
+            }
+
+            return filteredQuestions.size();
+
+        } catch (HeaderValidationException | RowValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Oväntat fel vid import av Excel-fil", e);
         }
     }
 
@@ -114,10 +144,28 @@ public class ExcelImportService implements ExcelImportServiceInterface {
     @Override
     @Transactional
     public void deleteExcelFile(Long fileId) {
-        excelImportFileRepository.deleteById(fileId);
+
+        ExcelImportFile file = excelImportFileRepository
+                .findById(fileId)
+                .orElseThrow(() -> new ExcelNotFoundException("Fil hittades inte"));
+
+        // 1. Hämta alla frågor som importerats via denna fil
+        List<Question> questions = questionRepository.findByExcelImportFile(file);
+
+        // 2. Koppla loss dem (viktigt!)
+        for (Question q : questions) {
+            q.setExcelImportFile(null);
+        }
+
+        // 3. Spara ändringen (ofta optional men tydligt)
+        questionRepository.saveAll(questions);
+
+        // 4. Ta bort Excel-filen (loggen)
+        excelImportFileRepository.delete(file);
     }
 
-    // Mappning av rad till Question utan att sätta excelFile (kopplas endast vid faktisk import)
+    // Mappning av rad till Question utan att sätta excelFile (kopplas endast vid
+    // faktisk import)
     private Question mapRowToQuestion(Row row) {
         Question q = new Question();
         q.setExcelId((int) row.getCell(0).getNumericCellValue());

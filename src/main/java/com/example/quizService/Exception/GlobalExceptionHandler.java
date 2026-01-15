@@ -24,41 +24,41 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HeaderValidationException.class)
     public ResponseEntity<Map<String, Object>> handleHeaderException(HeaderValidationException ex) {
         return new ResponseEntity<>(
-            buildError("Header Error", ex.getMessage(), HttpStatus.BAD_REQUEST.value()),
-            HttpStatus.BAD_REQUEST
-        );
+                buildError("Header Error", ex.getMessage(), HttpStatus.BAD_REQUEST.value()),
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(RowValidationException.class)
     public ResponseEntity<Map<String, Object>> handleRowException(RowValidationException ex) {
-        return new ResponseEntity<>(
-            buildError("Row Error", ex.getMessage(), HttpStatus.BAD_REQUEST.value()),
-            HttpStatus.BAD_REQUEST
-        );
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Row Error");
+        body.put("message", "Fel i en eller flera rader");
+        body.put("errors", ex.getErrors()); // ✅ här skickar vi hela listan
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(SubjectQuestionCountException.class)
     public ResponseEntity<Map<String, Object>> handleSubjectCountException(SubjectQuestionCountException ex) {
         return new ResponseEntity<>(
-            buildError("Subject Question Count Error", ex.getMessage(), HttpStatus.BAD_REQUEST.value()),
-            HttpStatus.BAD_REQUEST
-        );
+                buildError("Subject Question Count Error", ex.getMessage(), HttpStatus.BAD_REQUEST.value()),
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(QuestionNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleQuestionNotFoundException(QuestionNotFoundException ex) {
         return new ResponseEntity<>(
-            buildError("Question not found", ex.getMessage(), HttpStatus.NOT_FOUND.value()),
-            HttpStatus.NOT_FOUND
-        );
+                buildError("Question not found", ex.getMessage(), HttpStatus.NOT_FOUND.value()),
+                HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(ExcelNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleExcelNotFoundException(ExcelNotFoundException ex) {
         return new ResponseEntity<>(
-            buildError("Not Found", "Excel-filen hittades inte.", HttpStatus.NOT_FOUND.value()),
-            HttpStatus.NOT_FOUND
-        );
+                buildError("Not Found", "Excel-filen hittades inte.", HttpStatus.NOT_FOUND.value()),
+                HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(Exception.class)
@@ -69,9 +69,8 @@ public class GlobalExceptionHandler {
         }
 
         return new ResponseEntity<>(
-            buildError("Internal Server Error", ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()),
-            HttpStatus.INTERNAL_SERVER_ERROR
-        );
+                buildError("Internal Server Error", ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 }
