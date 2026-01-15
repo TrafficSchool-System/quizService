@@ -2,6 +2,7 @@ package com.example.quizService.Service;
 
 import com.example.quizService.Dto.FinalExamDTO;
 import com.example.quizService.Dto.QuizQuestionDTO;
+import com.example.quizService.Dto.UpdateQuestionDTO;
 import com.example.quizService.Entity.Question;
 import com.example.quizService.Exception.QuestionNotFoundException;
 import com.example.quizService.Exception.SubjectQuestionCountException;
@@ -118,6 +119,27 @@ public class QuestionService implements QuestionServiceInterface {
     // Använd din nya DTO-constructorn
     return new FinalExamDTO(result, 50); // ← 50 min timer
 }
+
+    @Override
+    public Question updateQuestion(Long id, UpdateQuestionDTO dto) {
+
+        Question q = getQuestionById(id); 
+
+        q.setQuestion(dto.getQuestion());
+        q.setSfi(dto.getSfi());
+        q.setCorrectAnswer(dto.getCorrectAnswer());
+        q.setWrongAnswer1(dto.getWrongAnswer1());
+        q.setWrongAnswer2(dto.getWrongAnswer2());
+        q.setWrongAnswer3(dto.getWrongAnswer3());
+        q.setExplanationForStudent(dto.getExplanationForStudent());
+
+        q.setImage(dto.getImage());
+        q.setSubject(dto.getSubject());
+        q.setLang(dto.getLang());
+
+        return questionRepository.save(q);
+    }
+
 
 
     

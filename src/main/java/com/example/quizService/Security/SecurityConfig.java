@@ -15,58 +15,59 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+        @Autowired
+        private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
 
-                // FÖRKLARING: Stäng av CSRF eftersom vi använder JWT (stateless)
-                .csrf(csrf -> csrf.disable())
+                                // FÖRKLARING: Stäng av CSRF eftersom vi använder JWT (stateless)
+                                .csrf(csrf -> csrf.disable())
 
-                // FÖRKLARING: Konfigurera vilka endpoints som behöver authentication
-                .authorizeHttpRequests(authz -> authz
-                        
-                        // 🟦 USER ENDPOINTS – kräver ROLE_USER
-                        .requestMatchers("/api/questions/**").hasRole("USER")
+                                // FÖRKLARING: Konfigurera vilka endpoints som behöver authentication
+                                .authorizeHttpRequests(authz -> authz
 
-                        // 🔒 ADMIN ENDPOINTS - kräver ROLE_ADMIN
-                        .requestMatchers(
-                                "/api/admin/**").hasRole("ADMIN")
+                                                // 🌐 PUBLIC ENDPOINTS – ingen autentisering krävs
+                                                .requestMatchers("/api/quiz/images/**").permitAll()
 
-                        // Allt annat blockera
-                        .anyRequest().denyAll()
-                )
+                                                // 🟦 USER ENDPOINTS – kräver ROLE_USER
+                                                .requestMatchers("/api/questions/**").hasRole("USER")
 
-                        
+                                                // 🔒 ADMIN ENDPOINTS - kräver ROLE_ADMIN
+                                                .requestMatchers(
+                                                                "/api/admin/**")
+                                                .hasRole("ADMIN")
 
-                // FÖRKLARING: Stateless sessions - vi använder JWT istället för server sessions
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                                // Allt annat blockera
+                                                .anyRequest().denyAll())
 
-                // FÖRKLARING: Lägg till vår JWT filter före standard authentication filter
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                                // FÖRKLARING: Stateless sessions - vi använder JWT istället för server sessions
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // FÖRKLARING: Hantera unauthorized requests
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, authException) -> {
+                                // FÖRKLARING: Lägg till vår JWT filter före standard authentication filter
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
-                            // Returnera 401 Unauthorized med custom meddelande
-                            response.setStatus(401);
-                            response.setContentType("application/json");
-                            response.getWriter().write(
-                                    "{\"error\": \"Unauthorized\", \"message\": \"JWT token krävs för denna endpoint\"}");
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                // FÖRKLARING: Hantera unauthorized requests
+                                .exceptionHandling(exceptions -> exceptions
+                                                .authenticationEntryPoint((request, response, authException) -> {
 
-                            // Returnera 403 Forbidden när användaren saknar rätt roll
-                            response.setStatus(403);
-                            response.setContentType("application/json");
-                            response.getWriter().write(
-                                    "{\"error\": \"Forbidden\", \"message\": \"Du har inte behörighet att komma åt denna resurs\"}");
-                        }));
+                                                        // Returnera 401 Unauthorized med custom meddelande
+                                                        response.setStatus(401);
+                                                        response.setContentType("application/json");
+                                                        response.getWriter().write(
+                                                                        "{\"error\": \"Unauthorized\", \"message\": \"JWT token krävs för denna endpoint\"}");
+                                                })
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
 
-        return http.build();
-    }
+                                                        // Returnera 403 Forbidden när användaren saknar rätt roll
+                                                        response.setStatus(403);
+                                                        response.setContentType("application/json");
+                                                        response.getWriter().write(
+                                                                        "{\"error\": \"Forbidden\", \"message\": \"Du har inte behörighet att komma åt denna resurs\"}");
+                                                }));
+
+                return http.build();
+        }
 }

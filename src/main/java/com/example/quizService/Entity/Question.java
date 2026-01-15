@@ -52,7 +52,7 @@ public class Question {
 
     // ✅ KOPPLING TILL EXCELIMPORT
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "excel_import_file_id", nullable = false)
+    @JoinColumn(name = "excel_import_file_id")
     @JsonIgnore
     private ExcelImportFile excelImportFile;
 

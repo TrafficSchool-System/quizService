@@ -2,23 +2,29 @@ package com.example.quizService.Controller;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.quizService.Dto.ExcelFileDTO;
-import com.example.quizService.Entity.ExcelImportFile;
+import com.example.quizService.Dto.UpdateQuestionDTO;
 import com.example.quizService.Entity.Question;
 import com.example.quizService.Repository.ExcelImportFileRepository;
 import com.example.quizService.Service.QuestionServiceInterface;
 import com.example.quizService.Service.excel.ExcelImportServiceInterface;
+
+import jakarta.validation.Valid;
+
 
 @PreAuthorize("hasRole('ADMIN')")
 @RestController
@@ -39,7 +45,9 @@ public class AdminQuizController {
     }
 
     // === IMPORTERA EXCEL FILEN - ADMIN ONLY ===
-    @PostMapping("/import")
+    @PostMapping(value = "/import", 
+                consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<String> importQuestions(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun) {
@@ -87,6 +95,14 @@ public class AdminQuizController {
     @PreAuthorize("hasRole('ADMIN')")
     public List<Question> getAllQuestions() {
         return questionService.getAllQuestions();
+    }
+
+    // === UPPDATERA EN FRÅGA - ADMIN ONLY ===
+    @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Question> updateQuestion(@PathVariable Long id, @Valid @RequestBody UpdateQuestionDTO dto) {
+        Question updatedQuestion = questionService.updateQuestion(id, dto);
+        return ResponseEntity.ok(updatedQuestion);
     }
 
 }

@@ -1,10 +1,16 @@
 package com.example.quizService.Exception;
 
+import java.util.List;
+
 public class RowValidationException extends RuntimeException {
-    public RowValidationException(String message) {
-        super(message);
+    private final List<String> errors;
+
+    public RowValidationException(List<String> errors) {
+        super("Fel i en eller flera rader");
+        this.errors = errors;
     }
-    public RowValidationException(String message, Throwable cause) {
-        super(message, cause);
+
+    public List<String> getErrors() {
+        return errors;
     }
 }

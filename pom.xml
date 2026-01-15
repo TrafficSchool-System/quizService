@@ -68,6 +68,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Apache Commons Compress för att hantera ZIP-filer -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.21</version>
+        </dependency>
+
         <!-- JWT Dependencies -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

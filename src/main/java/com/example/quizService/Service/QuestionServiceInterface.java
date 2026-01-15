@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.example.quizService.Dto.FinalExamDTO;
 import com.example.quizService.Dto.QuizQuestionDTO;
+import com.example.quizService.Dto.UpdateQuestionDTO;
 import com.example.quizService.Entity.Question;
 
 public interface QuestionServiceInterface {
@@ -15,6 +16,7 @@ public interface QuestionServiceInterface {
     FinalExamDTO getFinalExam(); 
     List<Question> getQuestionsByLang(String lang);
     Question getQuestionById(Long id);
+    Question updateQuestion(Long id, UpdateQuestionDTO dto);
     void deleteQuestion(Long id);
 
     

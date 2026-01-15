@@ -169,6 +169,8 @@ public class ExcelValidationUtil {
          * }
          */
 
+        validateImageExists(row.getCell(28).getStringCellValue(), rowIndex, errors);
+
         // SUBJECT
         if (row.getCell(29) == null ||
                 row.getCell(29).getCellType() == CellType.BLANK ||
@@ -199,6 +201,26 @@ public class ExcelValidationUtil {
         }
 
         return errors;
+    }
+
+    // I ExcelValidationUtil.java, lägg till denna metod:
+
+    public static void validateImageExists(String imageName, int rowIndex, List<String> errors) {
+        if (imageName == null || imageName.trim().isEmpty()) {
+            return; // Tom bild är OK
+        }
+
+        // Kontrollera om filen finns
+        try {
+            java.nio.file.Path imagePath = java.nio.file.Paths.get(
+                    "src/main/resources/static/images/questions/" + imageName.trim());
+
+            if (!java.nio.file.Files.exists(imagePath)) {
+                errors.add("Bilden '" + imageName + "' finns inte på rad: " + (rowIndex + 1));
+            }
+        } catch (Exception e) {
+            errors.add("Kunde inte validera bild '" + imageName + "' på rad: " + (rowIndex + 1));
+        }
     }
 
 }

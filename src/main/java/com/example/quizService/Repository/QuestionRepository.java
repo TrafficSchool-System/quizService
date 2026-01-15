@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.example.quizService.Entity.ExcelImportFile;
 import com.example.quizService.Entity.Question;
 
 public interface QuestionRepository extends JpaRepository<Question, Long> {
@@ -18,6 +19,9 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
   // Hämta alla frågor med viss excelId
   List<Question> findByExcelId (Integer excelId);
+
+  List<Question> findByExcelImportFile(ExcelImportFile excelImportFile);
+
 
   boolean existsByQuestionAndCorrectAnswerAndSubjectAndLang(
         String question, String correctAnswer, int subject, String lang

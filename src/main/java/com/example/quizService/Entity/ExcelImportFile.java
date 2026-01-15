@@ -18,12 +18,8 @@ public class ExcelImportFile {
 
     private boolean dryRun;
 
-    // ✅ KRITISK DEL
-    @OneToMany(
-        mappedBy = "excelImportFile",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
+    // KRITISK DEL
+    @OneToMany( mappedBy = "excelImportFile")
     private List<Question> questions;
 
     public ExcelImportFile() {}
