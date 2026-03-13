@@ -15,8 +15,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
+        /**
+         * REFACTORED SECURITY ARCHITECTURE:
+         * - Gateway validerar JWT (JwtAuthenticationGlobalFilter)
+         * - Gateway sätter headers: X-User-Id, X-User-Email, X-User-Role
+         * - QuizService läser headers (GatewayHeaderAuthenticationFilter)
+         */
         @Autowired
-        private JwtAuthenticationFilter jwtAuthenticationFilter;
+        private GatewayHeaderAuthenticationFilter gatewayHeaderAuthenticationFilter;
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -26,18 +32,26 @@ public class SecurityConfig {
                                 .csrf(csrf -> csrf.disable())
 
                                 // FÖRKLARING: Konfigurera vilka endpoints som behöver authentication
+                                // ORDNING VIKTIGT: Mer specifika regler måste komma först!
                                 .authorizeHttpRequests(authz -> authz
 
-                                                // 🌐 PUBLIC ENDPOINTS – ingen autentisering krävs
-                                                .requestMatchers("/api/quiz/images/**").permitAll()
+                                                // ==============================================
+                                                // 🌐 PUBLIC ENDPOINTS - No authentication required
+                                                // ==============================================
+                                                .requestMatchers("/api/quizzes/images/**")
+                                                .permitAll()
 
-                                                // 🟦 USER ENDPOINTS – kräver ROLE_USER
-                                                .requestMatchers("/api/questions/**").hasRole("USER")
-
-                                                // 🔒 ADMIN ENDPOINTS - kräver ROLE_ADMIN
-                                                .requestMatchers(
-                                                                "/api/admin/**")
+                                                // ==============================================
+                                                // 🔒 ADMIN ENDPOINTS - Require ADMIN role
+                                                // ==============================================
+                                                .requestMatchers("/api/admin/quizzes/**")
                                                 .hasRole("ADMIN")
+
+                                                // ==============================================
+                                                // 👤 USER QUIZ ENDPOINTS - Require USER role
+                                                // ==============================================
+                                                .requestMatchers("/api/quizzes/**")
+                                                .hasRole("USER")
 
                                                 // Allt annat blockera
                                                 .anyRequest().denyAll())
@@ -46,8 +60,9 @@ public class SecurityConfig {
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                                // FÖRKLARING: Lägg till vår JWT filter före standard authentication filter
-                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                                // FÖRKLARING: Lägg till Gateway header filter som läser X-User-* headers
+                                .addFilterBefore(gatewayHeaderAuthenticationFilter,
+                                                UsernamePasswordAuthenticationFilter.class)
 
                                 // FÖRKLARING: Hantera unauthorized requests
                                 .exceptionHandling(exceptions -> exceptions

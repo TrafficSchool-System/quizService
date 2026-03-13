@@ -9,8 +9,19 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
+/**
+ * IMAGE CONTROLLER
+ * 
+ * Serves quiz question images.
+ * Base path: /api/quizzes/images
+ * 
+ * PUBLIC ENDPOINT:
+ * - GET /quizzes/images/{filename} : Serve image file
+ * 
+ * Images are stored in resources/static/images/questions/
+ */
 @RestController
-@RequestMapping("/api/quiz/images")
+@RequestMapping("/api/quizzes/images")
 @CrossOrigin(origins = "http://localhost:5173")
 public class ImageController {
 
@@ -25,8 +36,7 @@ public class ImageController {
         try {
             // Ladda bilden från resources/static/images/questions/
             Resource resource = resourceLoader.getResource(
-                "classpath:static/images/questions/" + filename
-            );
+                    "classpath:static/images/questions/" + filename);
 
             if (!resource.exists()) {
                 return ResponseEntity.notFound().build();
@@ -46,7 +56,7 @@ public class ImageController {
 
     private MediaType getMediaType(String filename) {
         String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
-        
+
         return switch (extension) {
             case "jpg", "jpeg" -> MediaType.IMAGE_JPEG;
             case "png" -> MediaType.IMAGE_PNG;
