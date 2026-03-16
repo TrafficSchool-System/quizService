@@ -30,7 +30,7 @@ public class ExcelValidationUtil {
             if (headerRow.getCell(i) == null
                     || !headerRow.getCell(i).getStringCellValue().trim().equalsIgnoreCase(expectedHeaders[i])) {
                 throw new HeaderValidationException(
-                        "Felaktig header-rad! Kolumn " + (i + 1) + " ska vara: " + expectedHeaders[i]);
+                        "Invalid header row! Column " + (i + 1) + " should be: " + expectedHeaders[i]);
 
             }
         }
@@ -46,7 +46,7 @@ public class ExcelValidationUtil {
         // Kontrollera att alla celler finns
         for (int i = 0; i < expectedColumns; i++) {
             if (row.getCell(i) == null) {
-                errors.add("Kolumn " + (i + 1) + " saknas på rad: " + (rowIndex + 1));
+                errors.add("Column " + (i + 1) + " missing on row: " + (rowIndex + 1));
             }
 
         }
@@ -60,12 +60,12 @@ public class ExcelValidationUtil {
         if (questionMissing) {
 
             // Felmeddelande
-            errors.add("Frågetext (QUESTION) saknas på rad: " + (rowIndex + 1));
+            errors.add("Question text (QUESTION) missing on row: " + (rowIndex + 1));
 
         } else if (row.getCell(1).getStringCellValue().trim().matches("^\\d+$")) {
 
             // Felmeddelande
-            errors.add("Frågetext (QUESTION) får inte bara vara siffror på rad: " + (rowIndex + 1));
+            errors.add("Question text (QUESTION) must not be only digits on row: " + (rowIndex + 1));
         }
 
         // SFI
@@ -76,11 +76,11 @@ public class ExcelValidationUtil {
                 row.getCell(2).getStringCellValue().trim().isEmpty();
         if (sfiMissing) {
             // Felmeddelande
-            errors.add("SFI saknas på rad: " + (rowIndex + 1));
+            errors.add("SFI missing on row: " + (rowIndex + 1));
 
         } else if (row.getCell(2).getStringCellValue().trim().matches("^\\d+$")) {
             // Felmeddelande
-            errors.add("SFI får inte bara var siffror på rad: " + (rowIndex + 1));
+            errors.add("SFI must not be only digits on row: " + (rowIndex + 1));
         }
 
         // CORRECT ANSWER
@@ -91,11 +91,11 @@ public class ExcelValidationUtil {
                 row.getCell(3).getStringCellValue().trim().isEmpty();
         if (correctAnswerMissing) {
             // Felmeddelande
-            errors.add("Korrekt svar (CORRECT ANSWER) saknas på rad: " + (rowIndex + 1));
+            errors.add("Correct answer (CORRECT ANSWER) missing on row: " + (rowIndex + 1));
 
         } else if (row.getCell(3).getStringCellValue().trim().matches("^\\d+$")) {
             // Felmeddelande
-            errors.add("CORRECT ANSWER får inte bara vara siffror på rad: " + (rowIndex + 1));
+            errors.add("CORRECT ANSWER must not be only digits on row: " + (rowIndex + 1));
         }
 
         // WRONG ANSWER 1-3
@@ -108,11 +108,11 @@ public class ExcelValidationUtil {
 
             if (wrongAnswerMissing) {
                 // Felmeddelande
-                errors.add("Felaktig svar (WRONG ANSWER " + (i + 3) + ") saknas på rad: " + (rowIndex + 1));
+                errors.add("Wrong answer (WRONG ANSWER " + (i + 3) + ") missing on row: " + (rowIndex + 1));
 
             } else if (row.getCell(i).getStringCellValue().trim().matches("^\\d+$")) {
                 // Felmeddelande
-                errors.add("WRONG ANSWER får inte bara vara siffror på rad: " + (rowIndex + 1));
+                errors.add("WRONG ANSWER must not be only digits on row: " + (rowIndex + 1));
             }
         }
 
@@ -125,16 +125,16 @@ public class ExcelValidationUtil {
         if (explinationMissing) {
 
             // Felmeddelande
-            errors.add("EXPLINATION FOR THE STUDENT saknas på rad: " + (rowIndex + 1));
+            errors.add("EXPLINATION FOR THE STUDENT missing on row: " + (rowIndex + 1));
         } else if (row.getCell(7).getStringCellValue().trim().matches("^\\d+$")) {
 
             // Felmeddelande
-            errors.add("EXPLINATION FOR THE STUDENT får inte bara vara siffror på rad: " + (rowIndex + 1));
+            errors.add("EXPLINATION FOR THE STUDENT must not be only digits on row: " + (rowIndex + 1));
 
         } else if (row.getCell(7).getStringCellValue().length() > 2000) {
 
             // Felmeddelande
-            errors.add("EXPLINATION FOR THE STUDENT är för lång på rad: " + (rowIndex + 1));
+            errors.add("EXPLINATION FOR THE STUDENT is too long on row: " + (rowIndex + 1));
         }
 
         // BEHÖRIGHETER
@@ -144,12 +144,12 @@ public class ExcelValidationUtil {
             if (row.getCell(i) == null || row.getCell(i).getCellType() == CellType.BLANK) {
 
                 // Felmeddelande
-                errors.add("Behörighetskolumn (" + (i + 1) + ") saknas på rad: " + (rowIndex + 1));
+                errors.add("Permission column (" + (i + 1) + ") missing on row: " + (rowIndex + 1));
 
             } else if (row.getCell(i).getCellType() != CellType.NUMERIC) {
 
                 // Felmeddelande
-                errors.add("Behörighetskolumn (" + (i + 1) + ") har fel datatyp på rad: " + (rowIndex + 1));
+                errors.add("Permission column (" + (i + 1) + ") has wrong data type on row: " + (rowIndex + 1));
 
             } else {
 
@@ -157,7 +157,7 @@ public class ExcelValidationUtil {
                 if (val != 0 && val != 1) {
 
                     // Felmeddelande
-                    errors.add("Behörighetskolumn (" + (i + 1) + ") måste vara 0 eller 1 på rad: " + (rowIndex + 1));
+                    errors.add("Permission column (" + (i + 1) + ") must be 0 or 1 on row: " + (rowIndex + 1));
                 }
             }
         }
@@ -177,27 +177,27 @@ public class ExcelValidationUtil {
                 row.getCell(29).getCellType() != CellType.NUMERIC) {
 
             // Felmeddelande
-            errors.add("SUBJECT saknas eller har fel datatyp på rad: " + (rowIndex + 1));
+            errors.add("SUBJECT missing or has wrong data type on row: " + (rowIndex + 1));
 
         } else {
             double subjectValue = row.getCell(29).getNumericCellValue();
 
             if (subjectValue < 1 || subjectValue > 5 || subjectValue != Math.floor(subjectValue)) {
                 // Felmeddelande
-                errors.add("SUBJECT måste vara ett heltal mellan 1 och 5 på rad: " + (rowIndex + 1));
+                errors.add("SUBJECT must be an integer between 1 and 5 on row: " + (rowIndex + 1));
             }
         }
 
         // LANG
         if (row.getCell(30) == null || row.getCell(30).getCellType() == CellType.BLANK) {
-            errors.add("LANG saknas på rad: " + (rowIndex + 1));
+            errors.add("LANG missing on row: " + (rowIndex + 1));
         } else if (row.getCell(30).getCellType() != CellType.STRING) {
-            errors.add("LANG måste vara text (inte siffror) på rad: " + (rowIndex + 1));
+            errors.add("LANG must be text (not numbers) on row: " + (rowIndex + 1));
         } else if (row.getCell(30).getStringCellValue().trim().isEmpty()) {
-            errors.add("LANG saknas på rad: " + (rowIndex + 1));
+            errors.add("LANG missing on row: " + (rowIndex + 1));
         } else if (!row.getCell(30).getStringCellValue().trim().matches("^[A-Za-zÅÄÖåäö]+$")) {
             errors.add(
-                    "LANG får bara innehålla bokstäver (inga siffror eller specialtecken) på rad: " + (rowIndex + 1));
+                    "LANG may only contain letters (no digits or special characters) on row: " + (rowIndex + 1));
         }
 
         return errors;
@@ -216,10 +216,10 @@ public class ExcelValidationUtil {
                     "src/main/resources/static/images/questions/" + imageName.trim());
 
             if (!java.nio.file.Files.exists(imagePath)) {
-                errors.add("Bilden '" + imageName + "' finns inte på rad: " + (rowIndex + 1));
+                errors.add("Image '" + imageName + "' not found on row: " + (rowIndex + 1));
             }
         } catch (Exception e) {
-            errors.add("Kunde inte validera bild '" + imageName + "' på rad: " + (rowIndex + 1));
+            errors.add("Could not validate image '" + imageName + "' on row: " + (rowIndex + 1));
         }
     }
 

@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Row Error");
-        body.put("message", "Fel i en eller flera rader");
+        body.put("message", "Error in one or more rows");
         body.put("errors", ex.getErrors()); // ✅ här skickar vi hela listan
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ExcelNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleExcelNotFoundException(ExcelNotFoundException ex) {
         return new ResponseEntity<>(
-                buildError("Not Found", "Excel-filen hittades inte.", HttpStatus.NOT_FOUND.value()),
+                buildError("Not Found", "Excel file not found.", HttpStatus.NOT_FOUND.value()),
                 HttpStatus.NOT_FOUND);
     }
 

@@ -24,9 +24,13 @@ import java.util.List;
 import java.util.Set;
 import com.example.quizService.Util.ZipExtractorUtil;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ExcelImportService implements ExcelImportServiceInterface {
+
+    private static final Logger log = LoggerFactory.getLogger(ExcelImportService.class);
 
     private final QuestionRepository questionRepository;
     private final ExcelImportFileRepository excelImportFileRepository;
@@ -42,7 +46,7 @@ public class ExcelImportService implements ExcelImportServiceInterface {
     @Transactional
     public int importQuestionsFromExcel(MultipartFile file, boolean dryRun) {
         if (file.isEmpty()) {
-            throw new ExcelNotFoundException("Ingen Excel-fil hittades att importera");
+            throw new ExcelNotFoundException("No Excel file found to import");
         }
 
         MultipartFile excelFile = file; // Börja med att anta att det är en Excel-fil
@@ -54,9 +58,9 @@ public class ExcelImportService implements ExcelImportServiceInterface {
                 // Extrahera Excel-filen från ZIP:en
                 // Bilderna sparas automatiskt till static/images/questions/
                 excelFile = ZipExtractorUtil.extractAndProcess(file);
-                System.out.println("✅ ZIP-fil extraherad. Excel-fil: " + excelFile.getOriginalFilename());
+                log.info("ZIP file extracted. Excel file: {}", excelFile.getOriginalFilename());
             } catch (IOException e) {
-                throw new RuntimeException("Kunde inte extrahera ZIP-filen: " + e.getMessage(), e);
+                throw new RuntimeException("Could not extract ZIP file: " + e.getMessage(), e);
             }
         }
 
@@ -129,7 +133,7 @@ public class ExcelImportService implements ExcelImportServiceInterface {
         } catch (HeaderValidationException | RowValidationException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Oväntat fel vid import av Excel-fil", e);
+            throw new RuntimeException("Unexpected error during Excel file import", e);
         }
     }
 

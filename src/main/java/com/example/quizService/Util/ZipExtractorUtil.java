@@ -1,5 +1,7 @@
 package com.example.quizService.Util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.nio.file.Files;
@@ -14,6 +16,8 @@ import java.util.zip.ZipInputStream;
  * 2. En images/ mapp med bilder
  */
 public class ZipExtractorUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(ZipExtractorUtil.class);
 
     /**
      * Extraherar ZIP-filen och returnerar Excel-filen som en MultipartFile.
@@ -71,7 +75,7 @@ public class ZipExtractorUtil {
                     Path imagePath = imageDestination.resolve(imageFileName);
                     Files.copy(zis, imagePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                     
-                    System.out.println("✅ Sparade bild: " + imageFileName);
+                    log.info("Saved image: {}", imageFileName);
                 }
                 
                 zis.closeEntry();  // Stäng denna entry och gå till nästa
@@ -80,7 +84,7 @@ public class ZipExtractorUtil {
         
         // Säkerhetskontroll: Fanns det en Excel-fil i ZIP:en?
         if (excelFile == null) {
-            throw new IOException("Ingen Excel-fil hittades i ZIP-filen");
+            throw new IOException("No Excel file found in ZIP file");
         }
         
         return excelFile;
