@@ -52,10 +52,10 @@ public class SecurityConfig {
                                                 .hasRole("ADMIN")
 
                                                 // ==============================================
-                                                // 👤 USER QUIZ ENDPOINTS - Require USER role
+                                                // 👤 USER QUIZ ENDPOINTS - Require USER or INTERNAL_SERVICE role
                                                 // ==============================================
                                                 .requestMatchers("/api/quizzes/**")
-                                                .hasRole("USER")
+                                                .hasAnyRole("USER", "INTERNAL_SERVICE")
 
                                                 // Allt annat blockera
                                                 .anyRequest().denyAll())
