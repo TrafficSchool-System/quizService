@@ -20,9 +20,13 @@ public class SecurityConfig {
          * - Gateway validerar JWT (JwtAuthenticationGlobalFilter)
          * - Gateway sätter headers: X-User-Id, X-User-Email, X-User-Role
          * - QuizService läser headers (GatewayHeaderAuthenticationFilter)
+         * - Internal services använder X-Internal-API-Key (ServiceApiKeyFilter)
          */
         @Autowired
         private GatewayHeaderAuthenticationFilter gatewayHeaderAuthenticationFilter;
+
+        @Autowired
+        private ServiceApiKeyFilter serviceApiKeyFilter;
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -60,9 +64,15 @@ public class SecurityConfig {
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                                // FÖRKLARING: Lägg till Gateway header filter som läser X-User-* headers
-                                .addFilterBefore(gatewayHeaderAuthenticationFilter,
+                                // FÖRKLARING: Lägg till filters i rätt ordning
+                                // 1. ServiceApiKeyFilter - checks for X-Internal-API-Key header (internal
+                                // services)
+                                // 2. GatewayHeaderAuthenticationFilter - reads X-User-* headers (external users
+                                // via Gateway)
+                                .addFilterBefore(serviceApiKeyFilter,
                                                 UsernamePasswordAuthenticationFilter.class)
+                                .addFilterAfter(gatewayHeaderAuthenticationFilter,
+                                                ServiceApiKeyFilter.class)
 
                                 // FÖRKLARING: Hantera unauthorized requests
                                 .exceptionHandling(exceptions -> exceptions

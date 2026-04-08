@@ -52,10 +52,14 @@ public class QuestionController {
      * Returns a set of questions for the final exam.
      * Questions are randomly selected from all subjects.
      * 
+     * ACCESSIBLE BY:
+     * - USER role (via Gateway headers)
+     * - INTERNAL_SERVICE role (via X-Internal-API-Key)
+     * 
      * @return Final exam with questions
      */
     @GetMapping("/final-exam")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') or hasRole('INTERNAL_SERVICE')")
     public ResponseEntity<FinalExamDTO> getFinalExam() {
         return ResponseEntity.ok(questionService.getFinalExam());
     }
