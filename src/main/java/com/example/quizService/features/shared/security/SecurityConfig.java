@@ -35,68 +35,71 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private GatewayHeaderAuthenticationFilter gatewayHeaderAuthenticationFilter;
+        @Autowired
+        private GatewayHeaderAuthenticationFilter gatewayHeaderAuthenticationFilter;
 
-    @Autowired
-    private ServiceApiKeyFilter serviceApiKeyFilter;
+        @Autowired
+        private ServiceApiKeyFilter serviceApiKeyFilter;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                // Disable CSRF (using JWT - stateless)
-                .csrf(csrf -> csrf.disable())
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
+                                // Disable CSRF (using JWT - stateless)
+                                .csrf(csrf -> csrf.disable())
 
-                // Configure endpoint authorization
-                // ORDER MATTERS: More specific rules must come first!
-                .authorizeHttpRequests(authz -> authz
+                                // Configure endpoint authorization
+                                // ORDER MATTERS: More specific rules must come first!
+                                .authorizeHttpRequests(authz -> authz
 
-                        // ==============================================
-                        // 🔒 ADMIN ENDPOINTS - Require ADMIN role
-                        // ==============================================
-                        .requestMatchers("/api/admin/quizzes/**")
-                        .hasRole("ADMIN")
+                                                // Health probe (Azure Container Apps)
+                                                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
-                        // ==============================================
-                        // 👤 USER QUIZ ENDPOINTS - Require USER or INTERNAL_SERVICE role
-                        // ==============================================
-                        .requestMatchers("/api/quizzes/**")
-                        .hasAnyRole("USER", "INTERNAL_SERVICE")
+                                                // ==============================================
+                                                // 🔒 ADMIN ENDPOINTS - Require ADMIN role
+                                                // ==============================================
+                                                .requestMatchers("/api/admin/quizzes/**")
+                                                .hasRole("ADMIN")
 
-                        // Block everything else
-                        .anyRequest().denyAll())
+                                                // ==============================================
+                                                // 👤 USER QUIZ ENDPOINTS - Require USER or INTERNAL_SERVICE role
+                                                // ==============================================
+                                                .requestMatchers("/api/quizzes/**")
+                                                .hasAnyRole("USER", "INTERNAL_SERVICE")
 
-                // Stateless sessions (using JWT instead of server sessions)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                                // Block everything else
+                                                .anyRequest().denyAll())
 
-                // Add filters in correct order
-                // 1. ServiceApiKeyFilter - checks for X-Internal-API-Key header
-                // 2. GatewayHeaderAuthenticationFilter - reads X-User-* headers
-                .addFilterBefore(serviceApiKeyFilter,
-                        UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(gatewayHeaderAuthenticationFilter,
-                        ServiceApiKeyFilter.class)
+                                // Stateless sessions (using JWT instead of server sessions)
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Handle unauthorized requests
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, authException) -> {
+                                // Add filters in correct order
+                                // 1. ServiceApiKeyFilter - checks for X-Internal-API-Key header
+                                // 2. GatewayHeaderAuthenticationFilter - reads X-User-* headers
+                                .addFilterBefore(serviceApiKeyFilter,
+                                                UsernamePasswordAuthenticationFilter.class)
+                                .addFilterAfter(gatewayHeaderAuthenticationFilter,
+                                                ServiceApiKeyFilter.class)
 
-                            // Return 401 Unauthorized with custom message
-                            response.setStatus(401);
-                            response.setContentType("application/json");
-                            response.getWriter().write(
-                                    "{\"error\": \"Unauthorized\", \"message\": \"JWT token required for this endpoint\"}");
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                // Handle unauthorized requests
+                                .exceptionHandling(exceptions -> exceptions
+                                                .authenticationEntryPoint((request, response, authException) -> {
 
-                            // Return 403 Forbidden when user lacks required role
-                            response.setStatus(403);
-                            response.setContentType("application/json");
-                            response.getWriter().write(
-                                    "{\"error\": \"Forbidden\", \"message\": \"You don't have permission to access this resource\"}");
-                        }));
+                                                        // Return 401 Unauthorized with custom message
+                                                        response.setStatus(401);
+                                                        response.setContentType("application/json");
+                                                        response.getWriter().write(
+                                                                        "{\"error\": \"Unauthorized\", \"message\": \"JWT token required for this endpoint\"}");
+                                                })
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
 
-        return http.build();
-    }
+                                                        // Return 403 Forbidden when user lacks required role
+                                                        response.setStatus(403);
+                                                        response.setContentType("application/json");
+                                                        response.getWriter().write(
+                                                                        "{\"error\": \"Forbidden\", \"message\": \"You don't have permission to access this resource\"}");
+                                                }));
+
+                return http.build();
+        }
 }
