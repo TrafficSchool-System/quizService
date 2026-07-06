@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * ImportQuestionsUseCase - Import questions from Excel file
@@ -250,13 +251,13 @@ public class ImportQuestionsUseCase {
     private Question mapRowToQuestion(Row row) {
         Question q = new Question();
         q.setExcelId((int) row.getCell(0).getNumericCellValue());
-        q.setQuestion(row.getCell(1).getStringCellValue());
-        q.setSfi(row.getCell(2).getStringCellValue());
-        q.setCorrectAnswer(row.getCell(3).getStringCellValue());
-        q.setWrongAnswer1(row.getCell(4).getStringCellValue());
-        q.setWrongAnswer2(row.getCell(5).getStringCellValue());
-        q.setWrongAnswer3(row.getCell(6).getStringCellValue());
-        q.setExplanationForStudent(row.getCell(7).getStringCellValue());
+        q.setQuestion(sanitizeForMysqlUtf8(row.getCell(1).getStringCellValue()));
+        q.setSfi(sanitizeForMysqlUtf8(row.getCell(2).getStringCellValue()));
+        q.setCorrectAnswer(sanitizeForMysqlUtf8(row.getCell(3).getStringCellValue()));
+        q.setWrongAnswer1(sanitizeForMysqlUtf8(row.getCell(4).getStringCellValue()));
+        q.setWrongAnswer2(sanitizeForMysqlUtf8(row.getCell(5).getStringCellValue()));
+        q.setWrongAnswer3(sanitizeForMysqlUtf8(row.getCell(6).getStringCellValue()));
+        q.setExplanationForStudent(sanitizeForMysqlUtf8(row.getCell(7).getStringCellValue()));
 
         // Driver's license categories (8-27)
         q.setA((int) row.getCell(8).getNumericCellValue());
@@ -281,12 +282,33 @@ public class ImportQuestionsUseCase {
         q.setTra1((int) row.getCell(27).getNumericCellValue());
 
         // Image (cell 28) - can be filename OR URL!
-        q.setImage(row.getCell(28).getStringCellValue());
+        q.setImage(sanitizeForMysqlUtf8(row.getCell(28).getStringCellValue()));
 
         // Subject and language (29-30)
         q.setSubject((int) row.getCell(29).getNumericCellValue());
-        q.setLang(row.getCell(30).getStringCellValue());
+        q.setLang(sanitizeForMysqlUtf8(row.getCell(30).getStringCellValue()));
 
         return q;
+    }
+
+    /**
+     * MySQL utf8 (3-byte) cannot store non-BMP characters like emoji.
+     * Remove them so imports do not fail on single bad cell values.
+     */
+    private String sanitizeForMysqlUtf8(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+
+        String sanitized = value.codePoints()
+                .filter(cp -> Character.isValidCodePoint(cp) && cp <= 0xFFFF)
+                .mapToObj(cp -> String.valueOf((char) cp))
+                .collect(Collectors.joining());
+
+        if (!sanitized.equals(value)) {
+            log.warn("Sanitized unsupported characters from Excel text field");
+        }
+
+        return sanitized;
     }
 }
