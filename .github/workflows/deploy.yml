@@ -3,6 +3,7 @@ name: Build & Deploy quiz-service
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 env:
   APP_NAME: quiz-service
@@ -34,7 +35,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.APP_NAME }}:latest
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.APP_NAME }}:latest
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.APP_NAME }}:${{ github.sha }}
 
       - name: Driftsätt till Azure Container Apps
         run: |
@@ -42,7 +45,7 @@ jobs:
             --name ${{ env.APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --environment ${{ env.ENVIRONMENT }} \
-            --image ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.APP_NAME }}:latest \
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.APP_NAME }}:${{ github.sha }} \
             --registry-server ${{ secrets.ACR_LOGIN_SERVER }} \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }} \
