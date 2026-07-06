@@ -14,6 +14,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -140,6 +142,9 @@ public class ImportQuestionsUseCase {
         } catch (HeaderValidationException | RowValidationException e) {
             log.warn("Validation failed: {}", e.getMessage());
             throw e;
+        } catch (DataIntegrityViolationException e) {
+            log.error("Database constraint violation during import", e);
+            throw toUserFriendlyRowValidation(e);
         } catch (Exception e) {
             log.error("Unexpected error during import", e);
             throw new RuntimeException("Unexpected error during Excel file import", e);
@@ -182,6 +187,21 @@ public class ImportQuestionsUseCase {
         }
 
         return filteredQuestions.size();
+    }
+
+    private RowValidationException toUserFriendlyRowValidation(Exception ex) {
+        String rootMessage = ex.getMessage() == null ? "" : ex.getMessage();
+        String messageLower = rootMessage.toLowerCase(Locale.ROOT);
+
+        List<String> errors = new ArrayList<>();
+        if (messageLower.contains("incorrect string value")) {
+            errors.add("Importen misslyckades: Minst en cell innehåller tecken som databasen inte accepterar (ofta emoji). Ta bort emoji/specialtecken och försök igen.");
+            errors.add("Tips: Kontrollera särskilt kolumnen explanation_for_student i Excel-filen.");
+        } else {
+            errors.add("Importen misslyckades vid sparning i databasen. Kontrollera dataformatet i filen och försök igen.");
+        }
+
+        return new RowValidationException(errors);
     }
 
     /**
